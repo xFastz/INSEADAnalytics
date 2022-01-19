@@ -1,6 +1,6 @@
 ---
 title: "A Market Segmentation and Purchase Drivers Process"
-author: "T. Evgeniou"
+author: "T. Evgeniou, edited by Daniel Khoo in class!"
 output:
   html_document:
     css: ../../AnalyticsStyles/default.css
@@ -14,6 +14,16 @@ output:
       in_header: ../../AnalyticsStyles/default.sty
 always_allow_html: yes
 ---
+
+FOR THS ASSIGNMENT: part 1 is dimensionality reduction.
+part 2 is clustering. at some point in reduction, produce the components. for example component 1 and 2 and 3 and 4 and 5.
+Component 1 loads on qn 9 and qn 26, seems to be about status. so rename it as status.
+HINT: as done with part 1, proxy component 1 with only its leading question! ignore everything else just use qn 1.9? so when you do part 2 segmenting variables. can just put question 1.9 as segmentation variable. simplify the life quite a bit. be careful of indexing cos ID is 1st column, 1.9 is the 10th column.( something like this)
+
+for the assignment, need to tweak some lines of codes, distance, number of clusters etc. actual deliverable is to answer questions we see in the RMD itself.
+
+the blanks for the ANSWERS. fill in in text the answers. 6 sets of questions like this. fill in the text after iterating a few times.
+
 
 <!-- **Note:** Assuming the working directory is "MYDIRECTORY/INSEADAnalytics" (where you have cloned the course material), you can create an html file by running in your console the command (pay attention to the directory you are in, check it using getwd()) rmarkdown::render("CourseSessions/InClassProcess/MarketSegmentationProcessInClass.Rmd") -->
 
@@ -332,6 +342,38 @@ write.csv(NEW_ProjectData, file = "FactorScores.csv")
 
 <hr>\clearpage
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Part 2: Customer Segmentation 
 
 The code used here is along the lines of the code in the reading  [ClusterAnalysisReading.Rmd](https://github.com/InseadDataAnalytics/INSEADAnalytics/blob/master/CourseSessions/Sessions45/ClusterAnalysisReading.Rmd). We follow the process described in the [Cluster Analysis ](http://inseaddataanalytics.github.io/INSEADAnalytics/CourseSessions/Sessions45/ClusterAnalysisReading.html) reading. 
@@ -433,9 +475,13 @@ iplot.hist(Pairwise_Distances, breaks=10)
 
 We need to select the clustering method to use, as well as the number of cluster. It may be useful to see the dendrogram from Hierarchical Clustering, to have a quick idea of how the data may be segmented and how many segments there may be. Here is the dendrogram for our data:
 
+This is hte code the the clustering!
+
+
 ```{r}
-Hierarchical_Cluster_distances <- dist(ProjectData_segment, method=distance_used)
-Hierarchical_Cluster <- hclust(Hierarchical_Cluster_distances, method=hclust_method)
+Hierarchical_Cluster_distances <- dist(ProjectData_segment, method=distance_used) #computing the distances. distance_used is found in beginning of part 2, so it was already defined as euclidean earlier on. other choises are max, manhataan, canberra etc or can use own function.
+Hierarchical_Cluster <- hclust(Hierarchical_Cluster_distances, method=hclust_method) # this is also found in the definitions. was set to ward.D. distance between 2 clusters of customers, not individual customers. ward.D, ward.D2 etc. can look them up. single is minimum, compelte is maximum. ward.D is choose merging that minimised cluster of variances. works quite well. google them if you want
+
 # Display dendogram
 iplot.dendrogram(Hierarchical_Cluster)
 # TODO: Draw dendogram with red borders around the 3 clusters
@@ -449,12 +495,13 @@ df1 <- cbind(as.data.frame(Hierarchical_Cluster$height[length(Hierarchical_Clust
 colnames(df1) <- c("distances","index")
 iplot.df(melt(head(df1, 20), id="index"), xlab="Number of Components")
 ```
+this is the HEIGHT PLOT. similar to dendrogram but X axis is number of components/clusters. and traverse from RIGHT to LEFT. RIGHT is the leaves basically, the non clusters. start with leaves level, start climbing up the tree by moving left. height plot shows at what height you are at any given time. at some point, there may be a point where you see an ELBOW. in this case is about 5. stop being flat and become steep! this is the point where from cluster 5 to cluster 4, there is a big jump! menas putting a very different clusters into the same bucket. ElBOW is an indicator of when to stop! but then again, based on business intuition, if you can make 10 products, maybe 10 clusters is ok!
 
 Here is the segment membership of the first `r max_data_report` respondents if we use hierarchical clustering:
 
 ```{r}
 cluster_memberships_hclust <- as.vector(cutree(Hierarchical_Cluster, k=numb_clusters_used)) # cut tree into as many clusters as numb_clusters_used
-cluster_ids_hclust=unique(cluster_memberships_hclust)
+cluster_ids_hclust=unique(cluster_memberships_hclust) #cut tree into number of clusters. this has been decided earlier, set to 7.
 
 ProjectData_with_hclust_membership <- cbind(1:length(cluster_memberships_hclust),cluster_memberships_hclust)
 colnames(ProjectData_with_hclust_membership)<-c("Observation Number","Cluster_Membership")
@@ -464,10 +511,17 @@ write.csv(round(ProjectData_with_hclust_membership, 2), file = "ProjectData_with
 
 ```
 
+
+
+
+
+K MEANS code below. k means is different from hierarchical. iterative testing and a bit of randomness.
+
 while this is the segment membership if we use k-means:
 
 ```{r}
-kmeans_clusters <- kmeans(ProjectData_segment,centers= numb_clusters_used, iter.max=2000, algorithm=kmeans_method)
+kmeans_clusters <- kmeans(ProjectData_segment,centers= numb_clusters_used, iter.max=2000, algorithm=kmeans_method) 
+# users need to enter early on what is the numb_clusters_used. want 5 or 12 must do early!. ok to do statistical rule by dendrogram, but also biz intuition. then just test a few times iteratively.
 
 ProjectData_with_kmeans_membership <- cbind(1:length(kmeans_clusters$cluster),kmeans_clusters$cluster)
 colnames(ProjectData_with_kmeans_membership)<-c("Observation Number","Cluster_Membership")
@@ -513,6 +567,8 @@ iprint.df(round(cluster.profile, 2))
 write.csv(round(cluster.profile, 2), file = "cluster.profile.csv")
 
 ```
+The columns are the AVERAGES per segment per variable. IF across a variable, if segments are different, means truly different. This is used to evalute if segmetns are really different in real life or not, does it have meaning?
+
 
 We can also "visualize" the segments using **snake plots** for each cluster. For example, we can plot the means of the profiling variables for each of our clusters to better visualize differences between segments. For better visualization we plot the standardized profiling variables.
 
@@ -529,6 +585,7 @@ iplot.df(melt(cbind.data.frame(idx=as.numeric(1:nrow(Cluster_Profile_standar_mea
 write.csv(round(Cluster_Profile_standar_mean, 2), file = "Cluster_Profile_standar_mean.csv")
 
 ```
+plotting the means across indexes. each color is a segment. x axis is different profiling variables. you choose what to have or not to have. but see how orange curve is different from purple curve! very different people.
 
 We can also compare the averages of the profiling variables of each segment relative to the average of the variables across the whole population. This can also help us better understand whether  there are indeed clusters in our data (e.g. if all segments are much like the overall population, there may be no segments). For example, we can measure the ratios of the average for each cluster to the average of the population, minus 1, (e.g. `avg(cluster)` `/` `avg(population)` `-1`) for each segment and variable:
 
@@ -561,6 +618,8 @@ iprint.df(round(cluster_profile_ratios-1, 2))
 *
 
 ## Step 8: Robustness Analysis
+
+THis is the last step. we know 2 methods now. if have valid segmentation, across different methods it should not be DRASTICALLY different. want to iterate. try different segementation variabels if another thing makes sense. try with diff number of clusters. try to explain and interpret clusters.
 
 We should also consider the robustness of our analysis as we change the clustering method and parameters. Once we are comfortable with the solution we can finally answer our first business questions: 
 

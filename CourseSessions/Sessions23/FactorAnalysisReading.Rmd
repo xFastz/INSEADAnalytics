@@ -1,6 +1,6 @@
 ---
 title: "Derived Attributes and Dimensionality Reduction"
-author: "T. Evgeniou - This has been edited by Daniel Khoo"
+author: "Daniel Khoo"
 output:
   html_document:
     css: ../../AnalyticsStyles/default.css
@@ -18,7 +18,7 @@ output:
 <!-- The process is very useful for consulting! Just load the new data and you are ready to go for initial stages.  -->
 
 ```{r setuplibraries, echo=FALSE, message=FALSE}
-
+rm(list=ls())
 source("../../AnalyticsLibraries/library.R")
 source("../../AnalyticsLibraries/heatmapOutput.R")
 ggthemr('fresh')  # ggplot theme
