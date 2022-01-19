@@ -167,8 +167,8 @@ write.csv(round(thecor,2), file = "thecor.csv")
 
 **Answers:**
 
-*
-*
+* A1
+* A2 - rfldflsjdf
 *
 *
 *
