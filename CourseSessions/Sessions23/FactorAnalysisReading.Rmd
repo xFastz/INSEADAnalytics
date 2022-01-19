@@ -1,6 +1,6 @@
 ---
 title: "Derived Attributes and Dimensionality Reduction"
-author: "T. Evgeniou"
+author: "T. Evgeniou - This has been edited by Daniel Khoo"
 output:
   html_document:
     css: ../../AnalyticsStyles/default.css
@@ -15,6 +15,7 @@ output:
 ---
 
 <!-- **Note:** Assuming the working directory is "MYDIRECTORY/INSEADAnalytics" (where you have cloned the course material), you can create an html file by running in your console the command rmarkdown::render("CourseSessions/Sessions23/FactorAnalysisReading.Rmd") -->
+<!-- The process is very useful for consulting! Just load the new data and you are ready to go for initial stages.  -->
 
 ```{r setuplibraries, echo=FALSE, message=FALSE}
 
@@ -122,6 +123,9 @@ knitr::kable(round(ProjectDataFactor, 2)[1:min(max_data_report,nrow(ProjectDataF
 
 We will see some descriptive statistics of the data later, when we get into statistical analysis.
 
+Different scale! Larger scale of GMAT will dominate! Managerial more important, but do we want this? Maybe not, maybe yes. If you want to reserve difference in scale, then dont normalize, if you want to make them equally informative, then scale it! Note NOT always want to scale!
+
+When will you NOT want mean to be 0 and std dev to 1?  How satisfied was MBA student during studies? VARIABILITY of responses is key! forcing them to 1 will lose information! By standardizing, then means the important variable and unimportant variables are treated as  the same! How satisfied are you with jobs, how satisfied are you with IT services? (less important)
 
 ## The Approach
 
@@ -187,7 +191,7 @@ Note that for this data, while 6 of the "survey" data are on a similar scale, na
 ```{r, echo=TRUE, tidy=TRUE}
 ProjectDatafactor_scaled=apply(ProjectDataFactor,2, function(r) {if (sd(r)!=0) res=(r-mean(r))/sd(r) else res=0*r; res})
 ```
-
+<!-- This code above changes the data to be a z score -->
 Notice now the summary statistics of the scaled dataset:
 
 ```{r}
@@ -214,6 +218,9 @@ rownames(thecor)<-colnames(ProjectDataFactor)
 knitr::kable(round(thecor,2))
 ```
 
+Here, above 0.5 is already considered quite high, so basicaly can intuitively know that correlations higher than 0.5 / 0.7 should be 'grouped' together.
+Top 3 names would be Academic, Bottom 3 about Teamwork/Leadership. Comms is like both?
+
 
 There are quite a few large (in absolute value) correlations. For example  GPA, GMAT and Fellowship seem to be highly positively correlated - as expected? Maybe those can be grouped in one "factor"? How about "Communication Skills"? Should that also be part of that same factor? With what weights should we combine these raw attributes in groups? Remember, this is a very simple example where one could possibly derive attributes manually. In practice most of the time data are not as easy to understand, with many more than `r length(factor_attributes_used)` raw attributes. However, even in this simple example people often disagree about how to group the `r length(factor_attributes_used)` raw attributes!
 
@@ -224,7 +231,7 @@ Let's now see what factor analysis suggests as factors.
 There are many statistical methods to generate derived variables from raw data. One of the most standard ones is **Principal Component Analysis**. This method finds factors, called **Principal Components**, which are **linear combinations of the original raw attributes** so that most of the information in the data, measured using  **variance explained** (roughly "how much of the variability in the data is captured by the selected components") is captured by only a few factors. The components are developed typically so that they are **uncorrelated**, leading to *at most as many factors as the number of the original raw attributes, but* so that only a few are needed (the *principal components*) to keep most of the information (variance/variability) in the raw data. For example, for our data we have `r ncol(ProjectData)` raw attributes hence we can only have a total of `r ncol(ProjectData)` factors/components, each of them being a linear combination of the `r ncol(ProjectData)` original raw data. 
 
 ```{r}
-UnRotated_Results<-principal(ProjectDataFactor, nfactors=ncol(ProjectDataFactor), rotate="none",score=TRUE)
+UnRotated_Results<-principal(ProjectDataFactor, nfactors=ncol(ProjectDataFactor), rotate="none",score=TRUE) #from psych package.
 UnRotated_Factors<-round(UnRotated_Results$loadings,2)
 UnRotated_Factors<-as.data.frame(unclass(UnRotated_Factors))
 colnames(UnRotated_Factors)<-paste("Component",1:ncol(UnRotated_Factors),sep=" ")
@@ -240,7 +247,7 @@ b) the *eigenvalue corresponding to the component*.
 Each factor has an eigenvalue as well as the percentage of the variance explained. The sum of the eigenvalues of the components is equal to the number of original raw attributes used for factor analysis, while the sum of the percentages of the variance explained across all components is 100%. For example, for our data these are:
 
 ```{r}
-Variance_Explained_Table_results<-PCA(ProjectDataFactor, graph=FALSE)
+Variance_Explained_Table_results<-PCA(ProjectDataFactor, graph=FALSE) #PCA is also principal component packages. just different outputs available
 Variance_Explained_Table<-Variance_Explained_Table_results$eig
 Variance_Explained_Table_copy<-Variance_Explained_Table
 
@@ -250,6 +257,13 @@ colnames(Variance_Explained_Table) <- c("Eigenvalue", "Pct of explained variance
 
 knitr::kable(round(Variance_Explained_Table, 2))
 ```
+Component is the 'newly derived factor'. Component 1 means 1st derived feature can get this much of information.
+Eigenvalue. Summaries information in a new data with smaller amount of columns. try to keep much of the VARIANCE in the data, by having a new dataset with a smaller set of columns. Eigenvalue is a metric of how much of variability does this new component represent? WE DONT KNOW WHAT COMPONENT 1 or 2 IS at this stage. What is 3.74?
+
+If you add up Eigenvalue total, you get =7 which is number of components. Cum Pct of explained Variance = cumulative(Eigenvalue) / Total(Eigenvalue)
+if i have 2 components, we already have 85% of the variability of the original data == 'information'
+
+where you stop is based on your judgement. is 86% enough? then just use 2 components, if not then more. but a few statistical 'rule of thumbs' to decide.
 
 Note that the "first principal component" has the highest eigenvalue and captures most of the information (variance in this case) of the original raw data. As a rule of thumb, every component with eigenvalue more than 1 "has more information that the average original raw attribute". Typically one uses only these factors, although what is also important to consider is "what total percentage of the variance in the original data is kept when one replaces the original data/attributes with the selected factors/components".
 
@@ -265,7 +279,11 @@ colnames(df) <- c("eigenvalues", "components", "abline")
 #ggplot(melt(df, id="components"), aes(x=components, y=value, colour=variable)) + geom_line()
 ggplot(melt(df, id="components"), aes(x=components, y=value, colour=variable)) + geom_line() + scale_colour_manual(values = c("cyan", "blue"))
 ```
+this plots the eigenvalue on y axis and components on x axis. so stop at 3 here at the elbow where increasing components leads to diminishing results
 
+Another rule says eigenvalue above 1 is good, below is not. basically whose information captures above AVERAGE, cos average for each component is 1.
+
+third way. choose how many cumulative % is needed for the business, and add components until threshold is hit. if you want 90%, choose 3. if you want 85%, choose 2.
 
 > A third rule of thumb to decide how many components to use is to consider only the factors up to the "elbow" of the scree plot.
 
@@ -302,6 +320,9 @@ Rotated_Factors <- Rotated_Factors[sorted_rows,]
 
 knitr::kable(Rotated_Factors)
 ```
+this table gives the LOADINGS/WEIGHTS/COEFFICIENTS on how important this component is. its a linear combination.
+
+rotation tries to rephrase, reorder using math to maximise chances of 1. each new derived feature doesnt use too many old variabels, 2. each variabels IDEALLY used by 1 derived component.
 
 To better visualize and interpret the factors we often "supress" loadings with small values, e.g. with absolute values smaller than `r MIN_VALUE`. In this case our factors look as follows after suppressing the small numbers:
 
@@ -313,6 +334,8 @@ rownames(Rotated_Factors_thres)<- rownames(Rotated_Factors)
 
 knitr::kable(Rotated_Factors_thres)
 ```
+suppress numbers VISUALLY but NOT eliminate them! just dont show so that human eyes can read this easier. some overlap is fine but not if its all over the place!
+
 
 Notice that after rotation each factor combines (we say "loads on") only a few of the original raw attributes, making interpretation easier. For example, if we only select the factors with eigenvalue more than 1, in this case we would select `r sum(eigenvalues>=1)` factors.
 
@@ -343,6 +366,8 @@ colnames(NEW_ProjectData)<-paste("Derived Variable (Factor)",1:ncol(NEW_ProjectD
 
 knitr::kable(NEW_ProjectData[1:min(max_data_report,nrow(NEW_ProjectData)), , drop=F])
 ```
+assign scores to the new dimensions. like what we said previously, 1st compoenet is like academic, 2nd component is like team etc.
+
 
 Can you describe the observations using the new derived variables? How does each person perform for each of the selected factors?
 
